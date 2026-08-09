@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-08-09 09:59:18
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-08-09 11:43:43
+ * @LastEditTime: 2026-08-09 17:29:59
  * @FilePath: /Code_Notes/BCFTools.md
  * @Description: 
  * 
@@ -65,7 +65,37 @@ bcftools view -i 'QUAL >= 30' input.vcf.gz -Oz -o output.vcf.gz
    - `-m -snps|indels|both|any`：指定处理多等位基因的类型
 
 3. **参考碱基校验与修复 `-c`**
-  - `-c` --check-ref e：报错并退出 exit (default)
-  - `-c` --check-ref w：警告并继续 warn
-  - `-c` --check-ref x：剔除并继续 exclude
-  - `-c` --check-ref s：强行修正为参考基因组的碱基 set
+   - `-c` --check-ref e：报错并退出 exit (default)
+   - `-c` --check-ref w：警告并继续 warn
+   - `-c` --check-ref x：剔除并继续 exclude
+   - `-c` --check-ref s：强行修正为参考基因组的碱基 set
+
+## bcftools sort
+`bcftools sort [OPTIONS] <FILE.vcf>`
+   - `--write-index`：自动为输出文件生成索引
+
+```bash
+# 对input.vcf.gz文件拆分多等位基因，并进行排序，输出到output.vcf.gz，自动建立索引
+bcftools norm --threads 32 -m -any -f ref.fa input.vcf.gz -Ou | \
+bcftools sort --write-index -Oz -o output.vcf.gz
+```
+
+## bcftools merge
+`bcftools merge [options] <A.vcf.gz> <B.vcf.gz> [...]`
+1. **等位基因合并处理 `-0/-m`**
+   - `-0` --missing-to-ref：把./.补成0/0
+   - `-m` --merge STRING：相同位置等位基因合并策略 (e.g. snps, indels, both)
+
+2. **输入文件管理 `-l/--force-sample`**
+   - `-l` --file-list FILE：指定输入文件路径列表
+   - `--force-sample`：强制合并所有样本，给重复的样本名重新编号
+
+3. **INFO字段处理方法 `-i`**
+   - `-i` --info-rules TAG:METHOD：标签名:处理方法,标签名:处理方法 (e.g. DP:sum,AF:avg) 默认:sum
+
+```bash
+# 合并sample1.vcf.gz和sample2.vcf.gz文件，DP求和，AF求平均值，输出到merged.vcf.gz文件
+bcftools merge -i DP:sum,AF:avg sample1.vcf.gz sample2.vcf.gz -Oz -o merged.vcf.gz
+# 合并sample_list.txt中所有文件，强制合并所有样本，输出到merged.vcf.gz文件，并自动建立索引
+bcftools merge -l sample_list.txt --force-sample --write-index -Oz -o merged.vcf.gz
+```
