@@ -2,13 +2,27 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-08-09 09:59:18
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-08-09 17:29:59
+ * @LastEditTime: 2026-08-09 18:26:40
  * @FilePath: /Code_Notes/BCFTools.md
  * @Description: 
  * 
 -->
 
 # BCFTools
+**BCFTools** 是用于查看、处理、分析变异文件（VCF 和 BCF）的工具。https://github.com/samtools/bcftools
+
+## VCF 文件结构
+1. **基本结构**
+   - `头部信息`：以 `##` 开头，记录参考基因组、软件命令及字段定义
+   - `列名信息`：以 `#CHROM` 开头，定义每一列含义，包括 `CHROM`、`POS`、`ID`、`REF`、`ALT`、`QUAL`、`FILTER`、`INFO`、`FORMAT`、`SAMPLE`
+   - `变异信息`：记录具体的变异位点与各样本的基因型数据
+
+2. **FORMAT字段**
+   - `GT` Genotype：基因型信息，0/0，1/0，0/1，1/1，./.等，/ 表示未分型，| 表示已分型
+   - `GQ` Genotype Quality：基因型质量
+   - `DP` Read Depth：深度信息，表示该位点的测序深度
+   - `AD` Allele Depth：支持各等位基因的Reads数量 (e.g. 10,2 表示支持REF的Reads为10，支持ALT的为2)
+   - `AC` Allele Count：等位基因个数
 
 ## bcftools view
 `bcftools view [options] <in.vcf.gz> [region1 [...]]`
