@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-08-09 09:59:18
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-08-11 09:42:31
+ * @LastEditTime: 2026-08-13 16:47:17
  * @FilePath: /Code_Notes/BCFTools.md
  * @Description: 
  * 
@@ -113,3 +113,36 @@ bcftools merge -i DP:sum,AF:avg sample1.vcf.gz sample2.vcf.gz -Oz -o merged.vcf.
 # 合并sample_list.txt中所有文件，强制合并所有样本，输出到merged.vcf.gz文件，并自动建立索引
 bcftools merge -l sample_list.txt --force-sample --write-index -Oz -o merged.vcf.gz
 ```
+
+## bcftools stats
+`bcftools stats [options] <A.vcf.gz> [<B.vcf.gz>]`
+1. **指定样本 `-S/-s`**
+   - `-S` --samples-file FILE：提取指定样本文件
+   - `-s` --samples LIST：提取指定样本列表
+
+2. **根据 QUAL DP INFO FORMAT 等字段筛选 `-i/-e`**
+   - `-i` --include EXPR：选择指定类型 (e.g. 'QUAL >= 30 && DP > 10')
+   - `-e` --exclude EXPR：排除指定类型 (e.g. 'QUAL < 30')
+
+3. **统计 FILTER 列 `-f`**
+   - `-f` --apply-filters LIST：统计 VCF 文件 FILTER 列指定要求的位点 (e.g. "PASS")
+
+4. **指定区域 `-R/-r`**
+   - `-R` --regions-file FILE：指定区域文件
+   - `-r` --regions：指定区域 (chr01:1000-2000)
+
+```bash
+# 统计被标为 LowQual 和 DP_filter 的位点
+bcftools stats -f LowQual,DP_filter sample.vcf.gz
+```
+| SN | 指标 | 数值 | 含义 |
+| :--- | :---: | :---: | :---: |
+| SN | number of samples | 1 | 包含样本数 |
+| SN | number of records | 31927 | 变异位点数 |
+| SN | number of no-ALTs | 0 | 无突变/参考位点 |
+| SN | number of SNPs | 0 | SNP 数量 |
+| SN | number of MNPs | 0 | MNP 数量 |
+| SN | number of indels | 31033 | 插入/缺失数量 |
+| SN | number of others | 1117 | 复杂变异类型数量 |
+| SN | number of multiallelic sites | 819 | 多等位基因变异 |
+| SN | number of multiallelic SNP sites | 0 | 多等位 SNP |
