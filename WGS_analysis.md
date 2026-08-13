@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-08-13 09:57:00
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-08-13 12:46:40
+ * @LastEditTime: 2026-08-13 16:03:45
  * @FilePath: /Code_Notes/WGS_analysis.md
  * @Description: 
  * 
@@ -10,14 +10,14 @@
 
 # WGS-Data-Analysis-Workfolw
 
-## Fastp
+## 原始数据质控
 **Fastp** 快速预处理和质控短读长原始 fastq 数据
 ```bash
 # 以双端测序数据为例
 fastp -i r1.fq.gz -I r2.fq.gz -o r1.clean.fq.gz -O r2.clean.fq.gz -w 24 --detect_adapter_for_pe
 ```
 
-## BWA
+## 比对与预处理
 **BWA (Burrows-Wheeler Aligner)** 用于将二代测序高通量 Reads 快速比对到大型参考基因组，在变异检测、RNA-seq等分析中连接原始数据与下游分析
 1. 参考基因组比对并排序
 ```bash
@@ -60,13 +60,30 @@ SAMPLE_TSV="\$SAMPLE_OUT/${sample}_stats.tsv"
 
     echo -e "${sample}\t\$total_reads\t\$total_length\t\$mapping_base\t\${mapping_rate}%\t\$avg_depth" > "\$SAMPLE_TSV"
 ```
+| Sample | Total_Reads | Total_Length(bp) | Mapping_Base | Mapping_Rate(%) | Avg_Depth |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| Sample1 | 92000952 | 13784281238 | 13687791269 | 99.30% | 18.14 |
+| Sample2 | 93512932 | 14010639164 | 13906960434 | 99.26% | 18.34 |
+| Sample3 | 96113584 | 14313934010 | 14213736472 | 18.92 |
+| Sample4 | 110854190 | 16528258961 | 16448923318 | 99.52% | 21.88 |
+| Sample5 | ... | ... | ... | ... | ... |
 
 3. 标记并去除 PCR 重复
+**Picard** 用于标记或去除由于 PCR 扩增产生的重复序列，减少假阳性变异
 ```bash
-picard MarkDuplicates \
+# 不建议直接使用picard MarkDuplicates，脚本默认内存 -Xmx1g 可能不够
+java -Xmx32g -jar /public/home/zhaoshuo/miniconda3/envs/bio_env/share/picard-2.20.4-0/picard.jar MarkDuplicates \
     I=${sample}.bam \
     O=${sample}_rmdup.bam \
     M=${sample}_dup_metrics.txt \
     REMOVE_DUPLICATES=true
 samtools index -@ 16 ${sample}_rmdup.bam
 ```
+```bash
+# 生成质量评估报告
+java -Xmx32g -jar /public/home/zhaoshuo/miniconda3/envs/bio_env/share/picard-2.20.4-0/picard.jar CollectWgsMetrics \
+    I=${sample}_rmdup.bam \
+    O=${sample}_metrics.txt \
+    R=$REF
+```
+
