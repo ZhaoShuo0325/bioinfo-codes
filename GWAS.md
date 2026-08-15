@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-08-12 10:37:32
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-08-14 16:01:52
+ * @LastEditTime: 2026-08-15 13:07:21
  * @FilePath: /Code_Notes/GWAS.md
  * @Description: 
  * 
@@ -22,12 +22,12 @@
 ## 变异检测（Variant Calling）
 ### SNP caller
 #### GATK (Genome Analysis Toolkit)
-1. 原始数据质控与预处理
+1. 原始数据质控与预处理  
 **详见 WGS-analysis** https://github.com/ZhaoShuo0325/bioinfo-codes/blob/main/WGS_analysis.md  
    - 使用 `fastp` 软件去接头序列
    - 使用 `bwa` 软件进行序列比对，获得 bam 文件
 
-2. 运行 GATK
+2. 运行 GATK  
 **gatk CreateSequenceDictionary** 生成参考基因组 `.dict` 文件，必须且只需一次
 ```bash
 gatk CreateSequenceDictionary -R ref.fa -O ref.dict
@@ -87,15 +87,19 @@ while read -r sample; do
     fi
 done < "$SAMPLE_LIST"
 ```
-
 ```bash
-#运行 GLnexus
+#运行 GLnexus 建议分染色体合并
+for i in {1..12}; do
+    chr="chr$(printf "%02d" $i)"
+    grep -w "$chr" ref.fa.fai | awk '{print $1 "\t0\t" $2}' > "${chr}.bed"
+done
 singularity exec glnexus-1.4.1.sif glnexus_cli \
-  --config DeepVariant \
-  --dir $DB_DIR \
-  --threads 32 \
-  --mem-gbytes 120 \
-  --list $SAMPLE_FILE > "total_merged.bcf"
+    --config DeepVariant \
+    --dir $DB_DIR \
+    --threads 32 \
+    --mem-gbytes 200 \
+    --bed "${chr}.bed" \
+    --list $SAMPLE_FILE > "${chr}_merged.bcf"
 ```
 
 ### SV caller
