@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-08-12 10:37:32
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-08-15 13:07:21
+ * @LastEditTime: 2026-08-16 10:28:37
  * @FilePath: /Code_Notes/GWAS.md
  * @Description: 
  * 
@@ -49,6 +49,43 @@ gatk HaplotypeCaller \
     --emit-ref-confidence GVCF \
     --native-pair-hmm-threads 32
 ```
+可以将多条染色体合并  
+```bash
+# 获取所有染色体 gvcf 路径文件
+list_file="${sample}_files.list"
+for gvcf in $(ls "${sample}_chr"*.g.vcf.gz | sort -V); do
+    echo "$gvcf" >> "$list_file"
+done
+# 合并 建立索引
+bcftools concat -f "$list_file" --threads 32 -Oz -o "${sample}.g.vcf.gz"
+bcftools index -t --threads 32 ${sample}.g.vcf.gz
+```
+
+**gatk CombineGVCFs** 多样本合并 GVCF 文件，推荐分染色体运行
+```bash
+# 生成传入参数文件 -V /path/to/gvcf
+> $GVCF_LIST
+for sample in $(cat $SAMPLE_LIST); do
+    gvcf_path="$VCF_DIR/${sample}/${sample}_${chr}.g.vcf.gz"
+        echo "-V $gvcf_path" >> "$GVCF_LIST"
+done
+# gatk CombineGVCFs 合并
+gatk CombineGVCFs \
+    -R $REF \
+    -O combined_${chr}.g.vcf.gz \
+    $(cat $GVCF_LIST)
+```
+
+**gatk GenotypeGVCFs** 联合基因分型(Joint Genotyping)  
+将群体中所有样本的数据综合评估，转换成标准的 VCF 变异基因型矩阵文件  
+```bash
+gatk GenotypeGVCFs \
+    -R $REF$ \
+    -V combined_${chr}.g.vcf.gz \
+    -O combined_${chr}_final.vcf.gz
+```
+
+
 
 #### DeepVariant
 1. 原始数据质控与预处理  

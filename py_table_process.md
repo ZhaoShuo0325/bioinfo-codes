@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-08-15 15:56:00
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-08-15 16:31:10
+ * @LastEditTime: 2026-08-15 21:59:28
  * @FilePath: /Code_Notes/py_table_process.md
  * @Description: 
  * 
@@ -25,9 +25,11 @@ Pandas 使用 openpyxl 等库来读取 Excel 文件
 ```python
 import pandas as pd
 
+# 读取 Excel 文件
 df = pd.read_excel(
     "data.xlsx", # 文件路径
-    sheet_name=0 # 0 表示第 1 个 sheet，或 sheet 名称（sheet_name='Sheet1'）
+    sheet_name=0, # 0 表示第 1 个 sheet，或 sheet 名称（sheet_name='Sheet1'）
+    header=0 # 用第一行作为列名（默认），header=None 没有表头
     )
 print(df.head()) # 打印前 5 行数据
 ```
@@ -38,3 +40,13 @@ dict_dfs = pd.read_excel(xls, sheet_name=None) # sheet_name=None 读取所有 sh
 df_sheet1 = dict_dfs['Sheet1'] # 读取指定 sheet
 print(df_sheet1.head())
 ```
+2. 使用 df.columns 获取列名  
+```python
+print(df.columns) # 打印列名
+
+# 提取指定列名
+start_col_index = 11
+end_col_index = 15
+cols = df.columns[start_col_index:end_col_index] 
+```
+
