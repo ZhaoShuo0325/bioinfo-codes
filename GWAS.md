@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-08-12 10:37:32
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-08-16 10:28:37
+ * @LastEditTime: 2026-08-23 10:54:54
  * @FilePath: /Code_Notes/GWAS.md
  * @Description: 
  * 
@@ -27,7 +27,7 @@
    - 使用 `fastp` 软件去接头序列
    - 使用 `bwa` 软件进行序列比对，获得 bam 文件
 
-2. 运行 GATK  
+2. 运行 GATK
 **gatk CreateSequenceDictionary** 生成参考基因组 `.dict` 文件，必须且只需一次
 ```bash
 gatk CreateSequenceDictionary -R ref.fa -O ref.dict
@@ -80,11 +80,36 @@ gatk CombineGVCFs \
 将群体中所有样本的数据综合评估，转换成标准的 VCF 变异基因型矩阵文件  
 ```bash
 gatk GenotypeGVCFs \
-    -R $REF$ \
+    -R $REF \
     -V combined_${chr}.g.vcf.gz \
-    -O combined_${chr}_final.vcf.gz
+    -O combined_${chr}_raw.vcf.gz
 ```
 
+**gatk VariantFiltration** **VCFTools** 变异过滤工具  
+过滤分为 `硬过滤` 和 `群体水平过滤`
+```bash
+# 硬过滤（Variant Hard Filtering）
+# 过滤条件："QD < 2.0 || FS > 60.0 || MQ < 40.0 || SOR > 3.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0" were removed
+gatk VariantFiltration \
+    -R $REF \
+    -V combined_${chr}_raw.vcf.gz \
+    --filter-expression "QD < 2.0 || FS > 60.0 || MQ < 40.0 || SOR > 3.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0" \
+    --filter-name "SNP_HardFilter" \
+    -O ${chr}_HardFilter.vcf.gz 
+```
+```bash
+# 群体水平过滤
+# 过滤条件：missing rate > 40% && MAF < 0.01 were removed
+vcftools --gzvcf ${chr}_HardFilter.vcf.gz --maf 0.01 --max-missing 0.6 --recode --recode-INFO-all --stdout | bgzip > ${chr}_maf001_ms06.vcf.gz
+```
+最后将所有分染色体的文件 concat 在一起，并建立索引
+```bash
+bcftools concat *__maf001_ms06.vcf.gz -Oz -o all_maf001_ms06.vcf.gz
+bcftools index -t all_maf001_ms06.vcf.gz
+# 可选择只保留 GT 信息
+bcftools annotate -x FORMAT all_maf001_ms06.vcf.gz -Oz -o all_maf001_ms06_GT_only.vcf.gz
+bcftools index SGA_maf001_ms06_GT_only.vcf.gz
+```
 
 
 #### DeepVariant
@@ -139,6 +164,27 @@ singularity exec glnexus-1.4.1.sif glnexus_cli \
     --list $SAMPLE_FILE > "${chr}_merged.bcf"
 ```
 
+#### sentieon
+**sentieon** 是高效率 GATK 替代软件，计算结果与 GATK 完全一致，但运行速度更快  
+1. 重校正
+```bash
+# 对应 GATK BaseRecalibrator
+# 分析原始 BAM 文件中测序 Reads 的碱基质量得分，生成质量统计表（重校正表）
+sentieon driver -r $REF -t 16 -i ${sample}.bam --algo QualCal tmp/${sample}_recal_data.table
+# 模拟重校正后的质量分布表
+sentieon driver -r $REF -t 16 -i ${sample}.bam -q tmp/${sample}_recal_data.table --algo QualCal tmp/${sample}_recal_data.table.post
+# 将校正前后的两份表进行对比，生成包含对比结果的 recal.csv 文件
+sentieon driver -t 16 --algo QualCal --plot --before tmp/${sample}_recal_data.table --after tmp/${sample}_recal_data.table.post tmp/${sample}_recal.csv
+# 绘制 BQSR 评估图表
+sentieon plot bqsr -o tmp/${sample}_recal_plots.pdf tmp/${sample}_recal.csv
+```
+
+2. 应用BQSR 校正后 Call SNP  
+```bash
+# 通过 -q 动态引入第一步计算出的校正表，避免产生中间 bam 文件
+sentieon driver -r $fasta -t $nt -i ${sample}.bam -q tmp/${sample}_recal_data.table --algo Haplotyper --emit_mode gvcf ${sample}_gvcf.gz
+```
+
 ### SV caller
 #### vg toolkit
 1. 图泛基因组构建与 genotyping  
@@ -159,12 +205,14 @@ done < "$SAMPLE_LIST"
 # SURVIVOR 合并
 SURVIVOR merge "$file_list" 1000 1 1 1 0 50 "survivor_merged.vcf"
 bgzip "survivor_merged.vcf"
-# 去除非 GT 字段 排序 建立索引
+# 去除非 GT 字段 排序 填补0/0 过滤MAF 建立索引
 bcftools annotate -x INFO,^FORMAT/GT survivor_merged.vcf.gz -Oz -o survivor_merged.GT_only.vcf.gz
 bcftools sort survivor_merged.GT_only.vcf.gz -Oz -o survivor_merged_sorted.vcf.gz
-bcftools index -t survivor_merged_sorted.vcf.gz
 # 将合并后缺失的 GT 添为 0/0
 zcat survivor_merged_sorted.vcf.gz | awk '{if($0 ~ /^#/) print; else {gsub(/\.\/\./, "0/0"); print}}' | bgzip > modified_SV.vcf.gz
+# 过滤 MAF < 0.05
+vcftools --gzvcf modified_SV.vcf.gz --maf 0.05 --recode --recode-INFO-all --stdout | bgzip > modified_SV_maf005.vcf.gz
+bcftools index -t modified_SV_maf005.vcf.gz
 ```
 
 ## 群体结构分析

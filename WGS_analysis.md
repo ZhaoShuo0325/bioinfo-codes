@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-08-13 09:57:00
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-08-13 16:05:47
+ * @LastEditTime: 2026-08-19 14:36:14
  * @FilePath: /Code_Notes/WGS_analysis.md
  * @Description: 
  * 
@@ -87,3 +87,40 @@ java -Xmx32g -jar /public/home/zhaoshuo/miniconda3/envs/bio_env/share/picard-2.2
     R=$REF
 ```
 
+## Q & A
+1. **Q：** 运行 Picard 时发生报错 `Value was put into PairInfoMap more than once`  
+**A：** 是因为多个测序 reads 有相同的名字，可利用 samtools 强硬去除
+```bash
+# -f 0x2：丢弃单端比对（Single-end）、比对质量极差、未正确配对或被怀疑是二次比对的 reads
+samtools view -@ 16 -b -f 0x2 input.bam > output.bam
+```
+
+2. **Q：** 运行完 Picard 去重后，bam 文件大幅缩水  
+**A：** 检查 fastp 日志文件，查看是否是测序质量的原因  
+```bash
+Filtering result:
+reads passed filter: 435652476
+reads failed due to low quality: 172308
+reads failed due to too many N: 0
+reads failed due to too short: 280
+reads with adapter trimmed: 129867062
+bases trimmed due to adapters: 7067296008
+
+Duplication rate: 56.3309%
+```
+或使用 `samtools flagstat` 查看生成的 bam 文件质量  
+```bash
+229273259 + 0 in total (QC-passed reads + QC-failed reads)
+0 + 0 secondary
+5030601 + 0 supplementary
+0 + 0 duplicates
+227812497 + 0 mapped (99.36% : N/A)
+224242658 + 0 paired in sequencing
+112121329 + 0 read1
+112121329 + 0 read2
+71848558 + 0 properly paired (32.04% : N/A)
+222481395 + 0 with itself and mate mapped
+300501 + 0 singletons (0.13% : N/A)
+14843027 + 0 with mate mapped to a different chr
+4881004 + 0 with mate mapped to a different chr (mapQ>=5)
+```
