@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-08-12 10:37:32
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-08-23 10:54:54
+ * @LastEditTime: 2026-08-24 10:11:55
  * @FilePath: /Code_Notes/GWAS.md
  * @Description: 
  * 
@@ -89,10 +89,12 @@ gatk GenotypeGVCFs \
 过滤分为 `硬过滤` 和 `群体水平过滤`
 ```bash
 # 硬过滤（Variant Hard Filtering）
-# 过滤条件："QD < 2.0 || FS > 60.0 || MQ < 40.0 || SOR > 3.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0" were removed
+# 过滤条件：SNP："QD < 2.0 || FS > 60.0 || MQ < 40.0 || SOR > 3.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0" were removed
+bcftools view -v snps -m 2 -M 2 combined_${chr}_raw.vcf.gz -Oz -o combined_${chr}_snp.vcf.gz
+bcftools index -t combined_${chr}_snp.vcf.gz
 gatk VariantFiltration \
     -R $REF \
-    -V combined_${chr}_raw.vcf.gz \
+    -V combined_${chr}_snp.vcf.gz \
     --filter-expression "QD < 2.0 || FS > 60.0 || MQ < 40.0 || SOR > 3.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0" \
     --filter-name "SNP_HardFilter" \
     -O ${chr}_HardFilter.vcf.gz 
@@ -185,6 +187,27 @@ sentieon plot bqsr -o tmp/${sample}_recal_plots.pdf tmp/${sample}_recal.csv
 sentieon driver -r $fasta -t $nt -i ${sample}.bam -q tmp/${sample}_recal_data.table --algo Haplotyper --emit_mode gvcf ${sample}_gvcf.gz
 ```
 
+3. 群体 Joint Calling
+```bash
+> $GVCF_LIST
+for sample in $(cat $SAMPLE_LIST); do
+    gvcf_path="${sample}_${chr}.g.vcf.gz"
+    if [ -f "$gvcf_path" ]; then
+        echo "-v $gvcf_path" >> "$GVCF_LIST"
+    else
+        echo "Warning: $gvcf_path not found!"
+    fi
+done
+sentieon driver \
+    -t 32 \
+    -r $REF \
+    --algo GVCFtyper \
+    $(cat $GVCF_LIST) \
+    all_samples.vcf.gz
+```
+
+4. 过滤同 GATK
+
 ### SV caller
 #### vg toolkit
 1. 图泛基因组构建与 genotyping  
@@ -226,10 +249,14 @@ plink --vcf modified_SV.vcf.gz --make-bed --out modified_SV --set-missing-var-id
 ```bash
 # LD 修剪，去除高度相关的位点，减少连锁导致的过多权重
 # --indep-pairwise 50kb 1 0.2 ：窗口大小 50kb，步长 1个变异位点，相关性阈值 0.2
-plink --bfile modified_SV --indep-pairwise 50kb 1 0.2 --out modified_SV_pruned
-plink --bfile modified_SV --extract modified_SV_pruned.prune.in --make-bed --out modified_SV_pruned
+#plink --bfile modified_SV --indep-pairwise 50kb 1 0.2 --out modified_SV_pruned
+#plink --bfile modified_SV --extract modified_SV_pruned.prune.in --make-bed --out modified_SV_pruned
 ```
 ```bash
 # 进行 PCA 分析，指定输出文件前缀和主成分数量
-plink --bfile modified_SV_pruned --pca 10 --out modified_SV_pca
+plink --bfile modified_SV --pca 10 --out modified_SV_pca
+```
+```bash
+# 生成协变量文件
+awk '{print 1, $3, $4, $5}' modified_SV_pca.eigenvec > gemma_cov.txt
 ```
