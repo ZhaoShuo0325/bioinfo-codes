@@ -1,191 +1,85 @@
+awk -F'\t' '
+    $3=="gene" && ($1=="chr05" || $1=="05") && $4 <= 52800000 && $5 >= 51800000 {
+        split($9, arr, ";");
+        for (i in arr) {
+            if (arr[i] ~ /^ID=/) {
+                sub(/^ID=/, "", arr[i]);
+                print arr[i]
+            }
+        }
+    }
+' DM8.1_gene.gff3 > /public/home/zhaoshuo/work1/01_work/06_candidate/GABA/03_candidate/C05_51.8_52.8_gene.txt
 
-###
- # @Author: Shuo Zhao && 18904530325@163.com
- # @Date: 2026-08-19 14:50:27
- # @LastEditors: Shuo Zhao && 18904530325@163.com
- # @LastEditTime: 2026-08-22 16:13:13
- # @FilePath: /Code_Notes/00tmp_scripts.sh
- # @Description: 
- # 
-### 
+awk '
+    NR==FNR {
+        if (NR > 1) expr[$1] = 1
+        next
+    }
+    $1 in expr {
+        print $1
+    }
+' zz88_TPM_filtered.txt /public/home/zhaoshuo/work1/01_work/06_candidate/GABA/03_candidate/C05_51.8_52.8_gene.txt > /public/home/zhaoshuo/work1/01_work/06_candidate/GABA/03_candidate/C05_51.8_52.8_candidate_gene.txt
 
-#!/bin/bash
-HOME="/public/home/zhaoshuo/work1"
-GBZ="$HOME/01_work/02_graph/02_GiraffePrep/all_autoindex.giraffe.gbz"
-DIST="$HOME/01_work/02_graph/02_GiraffePrep/all_autoindex.dist"
-MIN="$HOME/01_work/02_graph/02_GiraffePrep/all_autoindex.shortread.withzip.min"
-ZIP="$HOME/01_work/02_graph/02_GiraffePrep/all_autoindex.shortread.zipcodes"
-FQ_DIR="$HOME/01_work/00_data/WGS_diploid" #re-sequencing
-SAMPLE_LIST="$HOME/01_work/00_data/lq_diploid/list" #re-sequencing
-OUT_DIR="$HOME/01_work/03_genotyping/01_giraffe"
+awk -F'\t' '
+    NR==FNR {
+        genes[$1] = 1
+        next
+    }
+    $3=="gene" {
+        split($9, arr, ";")
+        id = ""
+        for (i in arr) {
+            if (arr[i] ~ /^ID=/) {
+                id = arr[i]
+                sub(/^ID=/, "", id)
+            }
+        }
+        if (id in genes) {
+            chrom = $1
+            start = $4 - 1
+            end = $5
+            strand = $7
+            print chrom "\t" start "\t" end "\t" id "\t.\t" strand
+        }
+    }
+' /public/home/zhaoshuo/work1/01_work/06_candidate/GABA/03_candidate/C05_51.8_52.8_candidate_gene.txt DM8.1_gene.gff3 > /public/home/zhaoshuo/work1/01_work/06_candidate/GABA/03_candidate/C05_51.8_52.8_candidate_gene.bed
 
-for sample in $(cat $SAMPLE_LIST); do
-    sed "s/50/64/g" work.sh | \
-    sed "s/edta/giraffe_$sample/g" | \
-    sed "s/%j/giraffe_$sample/g" > giraffe_$sample.sh
+awk '
+    NR==FNR {
+        genes[$1] = 1
+        next
+    }
+    NR==1 {
+        print
+        next
+    }
+    $1 in genes {
+        print
+    }
+' /public/home/zhaoshuo/work1/01_work/06_candidate/GABA/03_candidate/C05_51.8_52.8_candidate_gene.txt zz88_TPM_filtered.txt > /public/home/zhaoshuo/work1/01_work/06_candidate/GABA/03_candidate/C05_51.8_52.8_candidate_expression.txt
 
-cat >> giraffe_$sample.sh << EOF
-OUT="$OUT_DIR/${sample}"
-mkdir -p \$OUT
-F1=$FQ_DIR/${sample}/*_1.clean.fq.gz
-F2=$FQ_DIR/${sample}/*_2.clean.fq.gz
+awk -F'\t' 'BEGIN {OFS="\t"} {
+    start = $2 - 2000; 
+    if (start < 0) start = 0; 
+    end = $3 + 2000; 
+    print $1, start, end
+}' /public/home/zhaoshuo/work1/01_work/06_candidate/GABA/03_candidate/C05_51.8_52.8_candidate_gene.bed > /public/home/zhaoshuo/work1/01_work/06_candidate/GABA/03_candidate/C05_51.8_52.8_candidate_genes_slop2k.bed
 
-vg giraffe -t 64 \
-        -Z $GBZ \
-        -d $DIST \
-        -m $MIN \
-        -z $ZIP \
-        -f \$F1 \
-        -f \$F2 \
-        -o gam > \$OUT/${sample}_giraffe.gam
-EOF
-sbatch giraffe_$sample.sh
-done
+bcftools view -R /public/home/zhaoshuo/work1/01_work/06_candidate/GABA/03_candidate/C05_51.8_52.8_candidate_genes_slop2k.bed \
+              -Oz -o /public/home/zhaoshuo/work1/01_work/06_candidate/GABA/03_candidate/C05_51.8_52.8_candidate_SV.vcf.gz \
+              /public/home/zhaoshuo/work1/01_work/05_GWAS/01_SV_GWAS/02_zz/01_PPG1.4_VCF/zz_PPG1.4_SV_sorted_modified.vcf.gz
+bcftools index -t /public/home/zhaoshuo/work1/01_work/06_candidate/GABA/03_candidate/C05_51.8_52.8_candidate_SV.vcf.gz
 
-#!/bin/bash
-HOME="/public/home/zhaoshuo/work1"
-XG="$HOME/01_work/02_graph/02_GiraffePrep/all_autoindex.xg"
-GBZ="$HOME/01_work/02_graph/02_GiraffePrep/all_autoindex.giraffe.gbz"
-GAM_DIR="$HOME/01_work/03_genotyping/01_giraffe"
-SAMPLE_LIST="$HOME/01_work/00_data/lq_diploid/list" #re-sequencing
-OUT_DIR="$HOME/01_work/03_genotyping/02_pack"
+vcftools --gzvcf C05_51.8_52.8_candidate_SV.vcf.gz --maf 0.05 --recode --recode-INFO-all --stdout | bgzip -c > C05_51.8_52.8_candidate_SV_maf0.05.vcf.gz
+bcftools index -t C05_51.8_52.8_candidate_SV_maf0.05.vcf.gz
 
-for sample in $(cat $SAMPLE_LIST); do
-    sed "s/50/32/g" work.sh | \
-    sed "s/edta/pack_$sample/g" | \
-    sed "s/%j/pack_$sample/g" > pack_$sample.sh
+bcftools view C05_51.8_52.8_candidate_SV_maf0.05.vcf.gz | awk 'BEGIN{OFS="\t"} /^#/ {print; next} {$3="sv" ++i; print}' | bgzip -c > C05_51.8_52.8_candidate_SV_maf0.05.vcf.gz.tmp && mv C05_51.8_52.8_candidate_SV_maf0.05.vcf.gz.tmp C05_51.8_52.8_candidate_SV_maf0.05.vcf.gz && bcftools index -t C05_51.8_52.8_candidate_SV_maf0.05.vcf.gz
 
-cat >> pack_$sample.sh << EOF
-GAM="$GAM_DIR/${sample}/${sample}_giraffe.gam"
-OUT="$OUT_DIR/${sample}"
-mkdir -p \$OUT
-vg pack -t 32 -Q 5 \
-        -x $GBZ \
-        -g \$GAM \
-        -o "\$OUT/${sample}.pack"
-EOF
-sbatch pack_$sample.sh
-done
+# 1. 将 SV VCF 转换为临时 BED 文件（处理 0-based 坐标）
+bcftools query -f '%CHROM\t%POS\t%POS\t%ID\n' C05_51.8_52.8_candidate_SV_maf0.05.vcf.gz | awk 'BEGIN {OFS="\t"} {print $1, $2-1, $2, $4}' > /tmp/sv_temp.bed
 
-#!/bin/bash
-#SBATCH --partition=AMD_9A14
-#SBATCH --cpus-per-task=128
-#SBATCH --job-name=SVmerge
-#SBATCH --output=%x.out
-#SBATCH --error=%x.err
+# 2. 使用 bedtools window 寻找上下游 2000bp 内的对应关系，并输出 Gene 与 SV ID
+bedtools window -a C05_51.8_52.8_candidate_gene.bed -b /tmp/sv_temp.bed -w 2000 | awk 'BEGIN {OFS="\t"; print "Gene_ID", "SV_ID"} {print $4, $10}' > C05_51.8_52.8_gene_sv_mapping.txt
 
-HOME="/public/home/zhaoshuo/work1"
-REF="$HOME/data/reference/DM8.1_genome.ori.chr.fa"
-SAMPLE_LIST="$HOME/01_work/00_data/lq_diploid/list" #re-sequencing
-VCF_DIR="$HOME/01_work/03_genotyping/03_PPG1.2_call"
-
-file_list="$VCF_DIR/vcf_list.txt"
-> "$file_list"
-while read -r sample; do
-    [ -z "$sample" ] && continue
-    echo "$VCF_DIR/${sample}/${sample}_q30.vcf" >> "$file_list"
-done < "$SAMPLE_LIST"
-
-SURVIVOR merge "$file_list" 1000 1 1 1 0 50 "$VCF_DIR/lq_PGG_1.2.vcf"
-bgzip "$VCF_DIR/lq_PGG_1.2.vcf"
-bcftools annotate -x INFO,^FORMAT/GT $VCF_DIR/lq_PGG_1.2.vcf.gz -Oz -o $VCF_DIR/lq_PGG_1.2.GT_only.vcf.gz
-bcftools index -t "$VCF_DIR/lq_PGG_1.2.GT_only.vcf.gz"
-bcftools sort "$VCF_DIR/lq_PGG_1.2.GT_only.vcf.gz" -Ov -o $VCF_DIR/lq_PGG_1.2_sorted.vcf
-bgzip "$VCF_DIR/lq_PGG_1.2_sorted.vcf"
-bcftools index -t "$VCF_DIR/lq_PGG_1.2_sorted.vcf.gz"
-
-#!/bin/bash
-#SBATCH --partition=AMD_9A14
-#SBATCH --mem=64G
-#SBATCH --cpus-per-task=64
-#SBATCH --job-name=maf
-#SBATCH --output=%x.out
-#SBATCH --error=%x.err
-
-HOME="/public/home/zhaoshuo/work1"
-REF="$HOME/data/reference/DM8.1_genome.ori.chr.fa"
-CHR_FILE="$HOME/01_work/00_data/01_116VCF/chrs.txt"
-VCF="$HOME/01_work/03_genotyping/03_PPG1.2_call/lq_PGG_1.2_sorted.vcf.gz"
-OUT_DIR="$HOME/01_work/03_genotyping/04_SV"
-
-TMP_DIR="$HOME/01_work/03_genotyping/04_SV/tmp"
-mkdir -p $TMP_DIR
-
-export TMP_DIR VCF OUT_DIR
-cat "$CHR_FILE" | xargs -P 64 -I {} bash -c '
-    chr="{}"
-    out_vcf="$TMP_DIR/${chr}.vcf.gz"
-
-    bcftools view -r "$chr" -Oz -o "$out_vcf" "$VCF"
-    bcftools index -t "$out_vcf"
-'
-cat "$CHR_FILE" | xargs -P 64 -I {} bash -c '
-    chr="{}"
-    out_vcf="$OUT_DIR/${chr}.maf005.MF05.vcf.gz"
-
-    vcftools --gzvcf $TMP_DIR/${chr}.vcf.gz --maf 0.05 --max-missing 0.5 --recode --recode-INFO-all --stdout | bgzip > $out_vcf
-    bcftools index -t "$out_vcf"
-'
-
-#!/bin/bash
-#SBATCH --partition=AMD_9654
-#SBATCH --cpus-per-task=64
-#SBATCH --job-name=merge
-#SBATCH --output=%x.out
-#SBATCH --error=%x.err
-
-HOME="/public/home/zhaoshuo/work1"
-REF="$HOME/data/reference/DM8.1_genome.ori.chr.fa"
-SAMPLE_LIST="$HOME/01_work/05_GWAS/phenotype_info/SGA_list" #re-sequencing
-VCF_DIR="$HOME/01_work/03_genotyping/03_PPG1.2_call"
-CHR_FILE="$HOME/01_work/00_data/01_116VCF/chrs.txt"
-OUT_DIR="$HOME/01_work/05_GWAS/01_SV_GWAS/01_SGA/01_PPG1.2_VCF"
-
-mkdir -p $OUT_DIR
-
-file_list="$VCF_DIR/vcf_list.txt"
-> "$file_list"
-while read -r sample; do
-    [ -z "$sample" ] && continue
-    echo "$VCF_DIR/${sample}/${sample}_q30.vcf" >> "$file_list"
-done < "$SAMPLE_LIST"
-
-SURVIVOR merge "$file_list" 1000 1 1 1 0 50 "$OUT_DIR/SGA_PPG1.2_SV.vcf"
-bgzip "$OUT_DIR/SGA_PPG1.2_SV.vcf"
-bcftools annotate -x INFO,^FORMAT/GT $OUT_DIR/SGA_PPG1.2_SV.vcf.gz -Oz -o $OUT_DIR/SGA_PPG1.2_SV.GT_only.vcf.gz
-bcftools sort "$OUT_DIR/SGA_PPG1.2_SV.GT_only.vcf.gz" -Oz -o $OUT_DIR/SGA_PPG1.2_SV_sorted.vcf.gz
-bcftools index -t "$OUT_DIR/SGA_PPG1.2_SV_sorted.vcf.gz"
-rm -rf $OUT_DIR/SGA_PPG1.2_SV.vcf.gz $OUT_DIR/SGA_PPG1.2_SV.GT_only.vcf.gz
-vcftools --gzvcf $OUT_DIR/SGA_PPG1.2_SV_sorted.vcf.gz --maf 0.05 --recode --recode-INFO-all --stdout | bgzip > $OUT_DIR/SGA_PPG1.2_SV_maf005.vcf.gz
-zcat $OUT_DIR/SGA_PPG1.2_SV_maf005.vcf.gz | awk '{if($0 ~ /^#/) print; else {gsub(/\.\/\./, "0/0"); print}}' | bgzip > $OUT_DIR/SGA_PPG1.2_SV_maf005_modified.vcf.gz
-bcftools index -t $OUT_DIR/SGA_PPG1.2_SV_maf005_modified.vcf.gz
-
-zcat SGA_PPG1.2_SV_sorted.vcf.gz | awk '{if($0 ~ /^#/) print; else {gsub(/\.\/\./, "0/0"); print}}' | bgzip > SGA_PPG1.2_SV_sorted_modified.vcf.gz
-
-#!/bin/bash
-#SBATCH --partition=AMD_9A14
-#SBATCH --cpus-per-task=16
-#SBATCH --job-name=plink
-#SBATCH --output=%x.out
-#SBATCH --error=%x.err
-
-HOME="/public/home/zhaoshuo/work1"
-CHR_FILE="$HOME/01_work/00_data/01_116VCF/chrs.txt"
-VCF_DIR="$HOME/01_work/05_GWAS/01_SV_GWAS/01_SGA/01_PPG1.2_VCF"
-PHENO_FILE="$HOME/01_work/05_GWAS/phenotype_info/SGA_pheno.txt"
-OUT_DIR="$HOME/01_work/05_GWAS/01_SV_GWAS/01_SGA/02_PPG1.2_PLINK"
-
-mkdir -p $OUT_DIR
-
-# 转换
-plink --vcf $VCF_DIR/SGA_PPG1.2_SV_sorted_modified_maf005.vcf.gz --make-bed --out $OUT_DIR/all --allow-extra-chr --set-missing-var-ids @:#
-# LD 修剪
-#plink --bfile $OUT_DIR/all --indep-pairwise 50kb 1 0.2 --out $OUT_DIR/all_pruned --allow-extra-chr
-#plink --bfile $OUT_DIR/all --extract $OUT_DIR/all_pruned.prune.in --make-bed --out $OUT_DIR/all_pruned --allow-extra-chr
-# 计算协变量
-plink --bfile $OUT_DIR/all --pca 10 --allow-no-sex --out $OUT_DIR/pca_result
-awk '{print 1, $3, $4, $5}' $OUT_DIR/pca_result.eigenvec > $OUT_DIR/gemma_cov.txt
-
-vcftools --gzvcf GSA_SV_modified.vcf.gz --maf 0.05 --recode --recode-INFO-all --stdout | bgzip > GSA_SV_modified_maf005.vcf.gz
-
-zcat GSA_SV_sorted.vcf.gz | awk '{if($0 ~ /^#/) print; else {gsub(/\.\/\./, "0/0"); print}}' | bgzip > GSA_SV_sorted_maf005_modified.vcf.gz
+# 3. 清理临时文件
+rm /tmp/sv_temp.bed
