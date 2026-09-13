@@ -1,4 +1,13 @@
 #!/bin/bash
+###
+ # @Author: Shuo Zhao && 18904530325@163.com
+ # @Date: 2026-08-28 10:36:27
+ # @LastEditors: Shuo Zhao && 18904530325@163.com
+ # @LastEditTime: 2026-09-11 17:03:42
+ # @FilePath: /Code_Notes/GWAS/RNA_Seq/01geno_exp.sh
+ # @Description: 
+ # 
+### 
 #SBATCH --partition=AMD_9654
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name=genotype_exp
