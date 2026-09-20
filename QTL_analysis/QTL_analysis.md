@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-09-19 13:22:42
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-09-19 14:44:26
+ * @LastEditTime: 2026-09-20 21:36:52
  * @FilePath: /Code_Notes/QTL_analysis/QTL_analysis.md
  * @Description: 
  * 
@@ -44,7 +44,7 @@ sentieon driver \
     --algo GVCFtyper \
     $(cat $GVCF_LIST) \
     total_${chr}_raw.vcf.gz
-# 过滤
+
 # Extract SNP
 bcftools view -v snps -m 2 -M 2 total_${chr}_raw.vcf.gz -Oz -o total_${chr}_snp.vcf.gz
 bcftools index -t total_${chr}_snp.vcf.gz
@@ -71,8 +71,42 @@ bcftools index -t $VCF_DIR/AEF1_SNPHardFilter.GT_only.vcf.gz
    - 构建双亲标准变异数据集
 ```bash
 # 过滤标准：变异需在双亲中为0/0, 1/1 或 1/1, 0/0，且在 F1 为 0/1
-# Usage: python 00filter_parents.py <in_vcf.gz> <out_vcf>
-python 00filter_parents.py AEF1_SNPHardFilter.GT_only.vcf.gz AEF1_SNP_VariantSet.vcf
+# Usage: python 00_filter_parents.py <in_vcf.gz> <out_vcf>
+python 00_filter_parents.py AEF1_SNPHardFilter.GT_only.vcf.gz AEF1_SNP_VariantSet.vcf
 bgzip -@ 8 -f AEF1_SNP_VariantSet.vcf
 bcftools index -t AEF1_SNP_VariantSet.vcf.gz
+```
+   - 提取每个 F2 样本的 SNP
+```bash
+# 分样本循环，每个样本依次按染色体提取，最后 concat
+for sample in $(cat $SAMPLE_LIST); do
+> $list_file
+while read -r chr; do
+    bcftools view -s $sample $chrom_vcf -Ou | \
+    bcftools annotate -x INFO,^FORMAT/GT -Oz -o $out_vcf
+    bcftools index -t $out_vcf
+    echo $out_vcf >> $list_file
+done < $CHR
+bcftools concat -f "$list_file" --threads 32 | \
+bcftools view -e 'GT="missing"' --threads 32 -Oz -o "${sample}_SNP.vcf.gz"
+bcftools index -t "${sample}_SNP.vcf.gz"
+done
+```
+
+## 绘制 Bin 图
+1. 滑动窗口计算杂合度
+```bash
+# 以 1Mb 为窗口 100kb 为步长分 Bin，计算杂合度
+# Usage: python 01_windows_1M100K_v4.11.py <input_parents_file> <input_snp_file> <output_win_file>
+python 01_windows_1M100K_v4.10.py AEF1_SNP_VariantSet.vcf.gz ${sample}_SNP.vcf.gz ${sample}_win.tsv
+```
+2. 判断 F2 群体中的亲本基因型
+```bash
+# Usage: python 02_snp_geno.py <parents_vcf> <f2_snp_file> <output_geno_file>
+python 02_snp_geno.py AEF1_SNP_VariantSet.vcf.gz ${sample}_SNP.vcf.gz ${sample}_geno.tsv
+```
+3. 判断 Bin 的亲本基因型
+```bash
+# Usage: python 03_bin_geno.py <01-win_file> <02-snp_geno_file> <output_detail_file> <output_geno_file>
+python 03_bin_geno.py ${sample}_win.tsv ${sample}_geno.tsv ${sample}_bin_geno_details.tsv ${sample}_bin_geno.tsv
 ```
