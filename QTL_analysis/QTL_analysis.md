@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-09-19 13:22:42
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-09-20 21:36:52
+ * @LastEditTime: 2026-09-21 17:06:52
  * @FilePath: /Code_Notes/QTL_analysis/QTL_analysis.md
  * @Description: 
  * 
@@ -109,4 +109,37 @@ python 02_snp_geno.py AEF1_SNP_VariantSet.vcf.gz ${sample}_SNP.vcf.gz ${sample}_
 ```bash
 # Usage: python 03_bin_geno.py <01-win_file> <02-snp_geno_file> <output_detail_file> <output_geno_file>
 python 03_bin_geno.py ${sample}_win.tsv ${sample}_geno.tsv ${sample}_bin_geno_details.tsv ${sample}_bin_geno.tsv
+```
+4. 样本 Bin 图基因型报告
+```bash
+# Usage: python 04_heter_geno.py <03-input_detail_file> <output_report_file> <output_geno_file>
+python 04_heter_geno.py ${sample}_bin_geno_details.tsv ${sample}_heter_report.txt ${sample}_heter_geno.txt
+```
+5. 合并所有样本的 Bin 图基因型
+```bash
+# 提取 chr bin start end 信息
+first_sample=$(head -n 1 $SAMPLE_LIST)
+awk '{print$1,$2,$3,$4}' ${first_sample}_bin_geno_details.tsv > bin_pos.txt
+# 按顺序提取每个样本的基因型信息
+geno_files=""
+for sample in $(cat $SAMPLE_LIST); do
+    geno_files="$geno_files ${sample}_heter_geno.txt"
+done
+paste bin_pos.txt $geno_files > F2_bin_geno.txt
+```
+
+## QTL 分析 (R/qtl2)
+1. 准备输入文件
+```bash
+# Usage: python 06_1_geno_pmap.py <input_F2_matrix> <sample_list> <output_geno> <output_pmap>
+python 06_1_geno_pmap.py F2_bin_geno.txt $SAMPLE_LIST geno.csv pmap.csv
+# Usage: python 06_2_prep_pheno.py <input_pheno_file> <sample_list> <output_pheno_csv>
+python 06_2_prep_pheno.py $PHENO_FILE $SAMPLE_LIST F2_pheno.csv
+# Usage: python 06_3_control_yaml.py <06_1-geno_file> <06_2-pheno_file> <06_1-pmap_file> <output_yaml> <cross_type>
+python 06_3_control_yaml.py geno.csv F2_pheno.csv pmap.csv control.yaml f2
+```
+2. 运行 R/qtl2
+```bash
+# Usage: Rscript 06_4_run_qtl.R <control_yaml_file> <output_pdf>
+Rscript 06_4_run_qtl.R control.yaml qtl_plots.pdf
 ```
