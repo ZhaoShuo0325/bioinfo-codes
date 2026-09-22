@@ -1,4 +1,18 @@
-#!/usr/bin/env python3
+'''
+Author: Shuo Zhao && 18904530325@163.com
+Date: 2026-09-19 14:41:01
+LastEditors: Shuo Zhao && 18904530325@163.com
+LastEditTime: 2026-09-22 10:42:42
+FilePath: /Code_Notes/QTL_analysis/00_filter_parents.py
+Description: 
+
+'''
+#!/usr/bin/python
+#Usage:
+#    python 00_filter_parents.py <in_vcf.gz> <out_vcf>
+#    - in_vcf.gz: Input VCF file (gzipped) containing parental and genotypes.
+#    - output_vcf: Output filtered VCF file (unzipped) containing variants that F1 is heterozygous and parents are opposite homozygotes.
+
 import gzip
 import sys
 

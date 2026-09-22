@@ -1,3 +1,12 @@
+'''
+Author: Shuo Zhao && 18904530325@163.com
+Date: 2026-09-21 14:08:22
+LastEditors: Shuo Zhao && 18904530325@163.com
+LastEditTime: 2026-09-22 10:43:49
+FilePath: /Code_Notes/QTL_analysis/06_2_prep_pheno.py
+Description: 
+
+'''
 #!/usr/bin/python
 # Usage:
 #    python 06_2_prep_pheno.py <input_pheno_file> <sample_list> <output_pheno_csv>

@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-09-19 13:22:42
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-09-21 17:06:52
+ * @LastEditTime: 2026-09-22 10:44:07
  * @FilePath: /Code_Notes/QTL_analysis/QTL_analysis.md
  * @Description: 
  * 
@@ -142,4 +142,31 @@ python 06_3_control_yaml.py geno.csv F2_pheno.csv pmap.csv control.yaml f2
 ```bash
 # Usage: Rscript 06_4_run_qtl.R <control_yaml_file> <output_pdf>
 Rscript 06_4_run_qtl.R control.yaml qtl_plots.pdf
+```
+
+## 运行 Snakemake 工作流  
+**Snakemake:** 将绘制 Bin 图和 QTL 分析部分整理成完整工作流，可通过配置 config.yaml 文件实现自动化流程，避免依次运行多个脚本。
+1. 配置 config.yaml 文件
+```yaml
+# 根目录
+HOME: 
+
+# 样本列表及变异数据路径
+SAMPLE_LIST: 
+PARENTS_VCF: 
+VCF_DIR: 
+
+# 表型数据原始文件
+RAW_PHENO: 
+
+# 输出总目录
+OUT_DIR: 
+
+# R
+RSCRIPT: 
+```
+2. 运行 Snakemake 工作流
+```bash
+# --rerun-incomplete 可实现断点重跑
+snakemake -s Snakefile --cores 32 --rerun-incomplete
 ```

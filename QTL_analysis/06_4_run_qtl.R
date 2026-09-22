@@ -1,3 +1,12 @@
+/*
+ * @Author: Shuo Zhao && 18904530325@163.com
+ * @Date: 2026-09-21 14:55:11
+ * @LastEditors: Shuo Zhao && 18904530325@163.com
+ * @LastEditTime: 2026-09-22 10:43:58
+ * @FilePath: /Code_Notes/QTL_analysis/06_4_run_qtl.R
+ * @Description: 
+ * 
+ */
 #!/usr/bin/env Rscript
 # Usage:
 #    Rscript 06_4_run_qtl.R <control_yaml_file> <output_pdf>

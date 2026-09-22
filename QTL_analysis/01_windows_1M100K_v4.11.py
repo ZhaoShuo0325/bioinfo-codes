@@ -2,12 +2,13 @@
 Author: Shuo Zhao && 18904530325@163.com
 Date: 2026-09-19 16:38:41
 LastEditors: Shuo Zhao && 18904530325@163.com
-LastEditTime: 2026-09-20 21:36:53
+LastEditTime: 2026-09-22 10:42:48
 FilePath: /Code_Notes/QTL_analysis/01_windows_1M100K_v4.11.py
 Description: 
 
 '''
 #!/usr/bin/python
+#Usage:
 #    python 01_windows_1M100K_v4.11.py <input_parents_file> <input_snp_file> <output_win_file>
 #    - input_parents_file: Parents SNP VariantSet file
 #    - input_snp_file: Preprocessed table file containing chr (col 1), pos (col 2), and GT (col 10).

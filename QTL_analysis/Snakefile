@@ -1,0 +1,101 @@
+/*
+ * @Author: Shuo Zhao && 18904530325@163.com
+ * @Date: 2026-09-22 10:36:23
+ * @LastEditors: Shuo Zhao && 18904530325@163.com
+ * @LastEditTime: 2026-09-22 10:36:37
+ * @FilePath: /Code_Notes/QTL_analysis/Snakefile
+ * @Description: 
+ * 
+ */
+import pandas as pd
+
+configfile: "config.yaml"
+
+with open(config["SAMPLE_LIST"]) as f:
+    SAMPLES = [line.strip() for line in f if line.strip()]
+
+OD = config["OUT_DIR"]
+SCRIPTS = "."
+
+rule all:
+    input: f"{OD}/06_QTL_analysis/qtl_plots.pdf"
+
+rule win_homo:
+    input:
+        p_vcf=config["PARENTS_VCF"],
+        s_vcf=lambda wc: f"{config['VCF_DIR']}/{wc.sample}/{wc.sample}_SNP.vcf.gz"
+    output: f"{OD}/01_win_homo/{{sample}}_win.tsv"
+    shell: f"python {SCRIPTS}/01_windows_1M100K_v4.11.py {{input.p_vcf}} {{input.s_vcf}} {{output}}"
+
+rule snp_geno:
+    input:
+        p_vcf=config["PARENTS_VCF"],
+        s_vcf=lambda wc: f"{config['VCF_DIR']}/{wc.sample}/{wc.sample}_SNP.vcf.gz"
+    output: f"{OD}/02_snp_geno/{{sample}}_geno.tsv"
+    shell: f"python {SCRIPTS}/02_snp_geno.py {{input.p_vcf}} {{input.s_vcf}} {{output}}"
+
+rule bin_geno:
+    input:
+        win=f"{OD}/01_win_homo/{{sample}}_win.tsv",
+        snp=f"{OD}/02_snp_geno/{{sample}}_geno.tsv"
+    output:
+        det=f"{OD}/03_bin_geno/{{sample}}/{{sample}}_bin_geno_details.tsv",
+        geno=f"{OD}/03_bin_geno/{{sample}}/{{sample}}_bin_geno.tsv"
+    shell:
+        f"mkdir -p $(dirname {{output.det}}) && "
+        f"python {SCRIPTS}/03_bin_geno.py {{input.win}} {{input.snp}} {{output.det}} {{output.geno}}"
+
+rule heter_geno:
+    input: f"{OD}/03_bin_geno/{{sample}}/{{sample}}_bin_geno_details.tsv"
+    output:
+        rep=f"{OD}/04_heter_geno/{{sample}}/{{sample}}_heter_report.txt",
+        geno=f"{OD}/04_heter_geno/{{sample}}/{{sample}}_heter_geno.txt"
+    shell:
+        f"mkdir -p $(dirname {{output.rep}}) && "
+        f"python {SCRIPTS}/04_heter_geno.py {{input}} {{output.rep}} {{output.geno}}"
+
+rule merge_bin_geno:
+    input:
+        files=expand(f"{OD}/04_heter_geno/{{sample}}/{{sample}}_heter_geno.txt", sample=SAMPLES),
+        first=f"{OD}/03_bin_geno/{SAMPLES[0]}/{SAMPLES[0]}_bin_geno_details.tsv"
+    output:
+        mat=f"{OD}/05_F2_bin_geno/F2_bin_geno.txt",
+        pos=f"{OD}/05_F2_bin_geno/bin_pos.txt"
+    params:
+        geno_files=" ".join([
+            f"{OD}/04_heter_geno/{s}/{s}_heter_geno.txt" for s in SAMPLES
+        ])
+    shell:
+        """
+        mkdir -p $(dirname {output.mat})
+        awk '{{print $1,$2,$3,$4}}' {input.first} > {output.pos}
+        paste {output.pos} {params.geno_files} > {output.mat}
+        """
+
+rule prepare_qtl_inputs:
+    input:
+        mat=f"{OD}/05_F2_bin_geno/F2_bin_geno.txt",
+        raw=config["RAW_PHENO"],
+        lst=config["SAMPLE_LIST"]
+    output:
+        geno=f"{OD}/06_QTL_analysis/geno.csv",
+        pmap=f"{OD}/06_QTL_analysis/pmap.csv",
+        pheno=f"{OD}/06_QTL_analysis/F2_pheno.csv",
+        yaml=f"{OD}/06_QTL_analysis/control.yaml"
+    shell:
+        f"""
+        mkdir -p $(dirname {{output.geno}})
+        python {SCRIPTS}/06_1_geno_pmap.py {{input.mat}} {{input.lst}} {{output.geno}} {{output.pmap}}
+        python {SCRIPTS}/06_2_prep_pheno.py {{input.raw}} {{input.lst}} {{output.pheno}}
+        python {SCRIPTS}/06_3_control_yaml.py {{output.geno}} {{output.pheno}} {{output.pmap}} {{output.yaml}} f2
+        """
+
+rule run_qtl_analysis:
+    input:
+        yaml=f"{OD}/06_QTL_analysis/control.yaml",
+        geno=f"{OD}/06_QTL_analysis/geno.csv",
+        pmap=f"{OD}/06_QTL_analysis/pmap.csv",
+        pheno=f"{OD}/06_QTL_analysis/F2_pheno.csv"
+    output: f"{OD}/06_QTL_analysis/qtl_plots.pdf"
+    shell:
+        f"{config['RSCRIPT']} {SCRIPTS}/06_4_run_qtl.R {{input.yaml}} {{output}}"

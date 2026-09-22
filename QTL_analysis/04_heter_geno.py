@@ -1,3 +1,12 @@
+'''
+Author: Shuo Zhao && 18904530325@163.com
+Date: 2026-09-21 12:36:53
+LastEditors: Shuo Zhao && 18904530325@163.com
+LastEditTime: 2026-09-22 10:43:37
+FilePath: /Code_Notes/QTL_analysis/04_heter_geno.py
+Description: 
+
+'''
 #!/usr/bin/python
 # Usage:
 #    python 04_heter_geno.py <03-input_detail_file> <output_report_file> <output_geno_file>

@@ -1,3 +1,12 @@
+'''
+Author: Shuo Zhao && 18904530325@163.com
+Date: 2026-09-19 16:44:52
+LastEditors: Shuo Zhao && 18904530325@163.com
+LastEditTime: 2026-09-22 10:43:00
+FilePath: /Code_Notes/QTL_analysis/02_snp_geno.py
+Description: 
+
+'''
 #!/usr/bin/python
 #Usage:
 #    python 02_snp_geno.py <parents_vcf> <f2_snp_file> <output_geno_file>

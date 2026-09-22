@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-08-12 10:37:32
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-08-28 09:20:53
+ * @LastEditTime: 2026-09-22 10:44:53
  * @FilePath: /Code_Notes/GWAS/GWAS.md
  * @Description: 
  * 
@@ -363,21 +363,17 @@ NR==FNR {
         }
     }
 }
-' candidate_top5.bed /public/home/zhaoshuo/work1/data/reference/DM8.1_gene.gff3 | sort -u > candidate_gene
+' candidate_top5.bed $GFF3 | sort -u > candidate_gene
 # Step5
 while read -r line; do
     [ -z "$line" ] && continue
     [[ "$line" =~ ID=([^;]+) ]] && gene_id="${BASH_REMATCH[1]}" || gene_id="$line"
 
     awk -v t="$gene_id" '!/^#/ && $3=="gene" && $9 ~ t {print $1, $4-1, $5, t; exit}' \
-        OFS="\t" /public/home/zhaoshuo/work1/data/reference/DM8.1_gene.gff3 > "${gene_id}.bed"
+        OFS="\t" $GFF3 > "${gene_id}.bed"
 
     if [ -s "${gene_id}.bed" ]; then
-        bedtools getfasta -fi /public/home/zhaoshuo/work1/data/reference/DM8.1_genome.fasta -bed "${gene_id}.bed" -fo "${gene_id}.fa" -name
-        echo "已成功生成: ${gene_id}.fa"
-    else
-        echo "警告: 仍未匹配到坐标，请检查 ${gene_id} 是否存在于 GFF3 中"
-    fi
+        bedtools getfasta -fi $REF -bed "${gene_id}.bed" -fo "${gene_id}.fa" -name
     
     rm -f "${gene_id}.bed"
 done < candidate_gene

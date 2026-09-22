@@ -1,0 +1,16 @@
+# 根目录
+HOME: "/public/home/zhaoshuo/work1"
+
+# 样本列表及变异数据路径
+SAMPLE_LIST: "/public/home/zhaoshuo/work1/02_work/00_data/01_F2_clean_WGS/F2_list"
+PARENTS_VCF: "/public/home/zhaoshuo/work1/02_work/01_SNP/03_SNP/AEF1_ft/AEF1_SNP_VariantSet.vcf.gz"
+VCF_DIR: "/public/home/zhaoshuo/work1/02_work/01_SNP/04_samples"
+
+# 表型数据
+RAW_PHENO: "/public/home/zhaoshuo/work1/02_work/04_SNP-QTL/F2_pheno.xlsx"
+
+# 输出总目录
+OUT_DIR: "/public/home/zhaoshuo/work1/02_work/05_QTL_snakemake"
+
+# R
+RSCRIPT: "/public/home/zhaoshuo/miniconda3/envs/R_env/bin/Rscript"

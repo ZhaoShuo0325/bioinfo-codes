@@ -1,3 +1,12 @@
+'''
+Author: Shuo Zhao && 18904530325@163.com
+Date: 2026-09-20 21:36:31
+LastEditors: Shuo Zhao && 18904530325@163.com
+LastEditTime: 2026-09-22 10:43:09
+FilePath: /Code_Notes/QTL_analysis/03_bin_geno.py
+Description: 
+
+'''
 #!/usr/bin/python
 # Usage:
 #    python 03_bin_geno.py <01-win_file> <02-snp_geno_file> <output_detail_file> <output_geno_file>
