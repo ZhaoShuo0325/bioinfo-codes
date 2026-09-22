@@ -2,12 +2,13 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-09-22 10:36:23
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-09-22 10:36:37
+ * @LastEditTime: 2026-09-22 14:37:13
  * @FilePath: /Code_Notes/QTL_analysis/Snakefile
  * @Description: 
  * 
  */
 import pandas as pd
+import numpy as np
 
 configfile: "config.yaml"
 

@@ -2,7 +2,7 @@
 Author: Shuo Zhao && 18904530325@163.com
 Date: 2026-09-21 14:08:22
 LastEditors: Shuo Zhao && 18904530325@163.com
-LastEditTime: 2026-09-22 10:43:49
+LastEditTime: 2026-09-22 14:36:40
 FilePath: /Code_Notes/QTL_analysis/06_2_prep_pheno.py
 Description: 
 
@@ -15,6 +15,7 @@ Description:
 #    - output_pheno_csv: Path to the output phenotype CSV file.
 #
 import sys
+import numpy as np
 import pandas as pd
 
 input_file = sys.argv[1]
@@ -28,7 +29,9 @@ id_col, valid = df.columns[0], [df.columns[0]]
 for c in df.columns[1:]:
   s = pd.to_numeric(df[c], errors="coerce")
   if df[c].notna().sum() and df[c].notna().sum() == s.notna().sum():
-    df[c], valid = s, valid + [c]
+    # log2 转换
+    df[c] = np.log2(s)
+    valid = valid + [c]
   else:
     print(f"exclude: {c}")
 
