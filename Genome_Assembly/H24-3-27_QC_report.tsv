@@ -1,0 +1,4 @@
+file	format	type	num_seqs	sum_len	min_len	avg_len	max_len	Q1	Q2	Q3	sum_gap	N50	N50_num	Q20(%)	Q30(%)	AvgQual	GC(%)	sum_n
+/public/home/zhaoshuo/work4/00_data/01_hifi/02_hifi_fq/H24-3-27/H24-3-27_hifi.fq.gz	FASTQ	DNA	2919322	56009795621	178	19185.9	60958	16283	18309	21362	0	19109	17713	98	96	26.58	35.17	0
+/public/home/zhaoshuo/work4/00_data/02_hic/02_clean_data/H24-3-27/H24-3-27_r1.clean.fq.gz	FASTQ	DNA	433680336	65052050400	150	150.0	150	150	150	150	0	150	1	99	99	30.25	37.79	277037
+/public/home/zhaoshuo/work4/00_data/02_hic/02_clean_data/H24-3-27/H24-3-27_r2.clean.fq.gz	FASTQ	DNA	433680336	65052050400	150	150.0	150	150	150	150	0	150	1	100	99	31.56	37.81	14676

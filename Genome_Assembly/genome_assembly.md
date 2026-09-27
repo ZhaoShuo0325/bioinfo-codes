@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-09-23 09:24:06
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-09-27 12:54:26
+ * @LastEditTime: 2026-09-27 12:56:32
  * @FilePath: /Code_Notes/Genome_Assembly/genome_assembly.md
  * @Description: 
  * 
@@ -86,7 +86,7 @@ sh $JUICER/CPU/juicer.sh \
     -p ${sample}.chrom.sizes \
     -y ${sample}_MboI.txt
 ```
-河滨互作结果文件存放在 aligned 文件夹下 merged_nodups.txt，记录 Hi-C 与基因组的比对信息。  
+互作结果文件存放在 aligned 文件夹下 merged_nodups.txt，记录 Hi-C 与基因组的比对信息。  
 3. Ragtag 参考基因组辅助的染色体挂载  
 ```bash
 # 利用 Ragtag 将组装的两套单倍型分别挂载到参考基因组（DM8）上
