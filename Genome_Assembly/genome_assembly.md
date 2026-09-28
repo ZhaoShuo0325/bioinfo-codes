@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-09-23 09:24:06
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-09-27 22:42:54
+ * @LastEditTime: 2026-09-28 09:52:57
  * @FilePath: /Code_Notes/Genome_Assembly/genome_assembly.md
  * @Description: 
  * 
@@ -10,7 +10,8 @@
 
 # Genome assembly  
 **组装方法：** 使用 `hifiasm` 进行 HiFi 与 Hi-C 联合分型组装 (Haplotype-resolved)，适合高杂合的二倍体马铃薯。
-
+**Learn From:** Lin Cheng https://github.com/Chenglin20170390/Haplotype-diversity and Zhigui Bao https://github.com/baozg/Potato_C88
+**基于参考基因组挂载：** `Hi-C 数据`只用于分型，若不分型可直接运行 `hifisam` 组装，和 `ragtag` 基于近缘物种参考基因组挂载到 scaffold。
 ## 原始数据质控  
    - `PacBio HiFi` .bam file -> .fq file  
    - `HiC` .fq file  
@@ -103,7 +104,7 @@ python2 $JUICER/juicebox_scripts/juicebox_scripts/agp2assembly.py ${sample}/ragt
 python 04_assembly_merge_sort.py ${sample}/ragtag_H1/${sample}.H1.assembly ${sample}/ragtag_H2/${sample}.H2.assembly ${sample}/${sample}.assembly.Hapall.assembly
 ```
 
-## 3d-dna 染色体挂载
+## 3d-dna 基于 Hi-C 的染色体挂载
 ```bash
 # 使用 3d-dna 软件中脚本实现可视化 hic 接触图
 # input1: 合并排序后 assembly 文件； input2: juicer 生成的互作文件； output: hic 接触热图，后续在 Juicebox 手工调整
@@ -111,3 +112,23 @@ $threeDDNA/visualize/run-assembly-visualizer.sh -q 0 ${sample}/${sample}.assembl
 ```
    - juicebox 需要 .hic 文件和 ${sample}.assembly.Hapall.assembly 文件  
    - 具体操作方法见 https://www.youtube.com/watch?v=Nj7RhQZHM18&t=378s
+
+## Assembly Assessment
+**1. Contig N50, Gap, Genome Size, etc.**
+```bash
+# assembly-stats
+assembly-stats  ${sample}.assembly.Hapall.fa > ${sample}.stats
+```
+**2. busco**
+```bash
+# busco
+# embryophyta_odb10 数据库
+busco -m genome -i ${sample}.assembly.Hapall.fa -o busco_${sample}  --offline -l embryophyta_odb10 -c 10
+```
+**3. QV**
+```bash
+# meryl 建库
+meryl count k=21 threads=32 ${sample}_hifi.fq.gz output meryl_${sample}.meryl
+# mergury 计算 QV
+merqury.sh meryl_${sample}.meryl ${sample}.assembly.Hapall.fa merqury_${sample}
+```
