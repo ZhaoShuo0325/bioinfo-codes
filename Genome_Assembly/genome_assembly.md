@@ -2,16 +2,17 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-09-23 09:24:06
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-09-28 09:52:57
+ * @LastEditTime: 2026-09-28 09:55:42
  * @FilePath: /Code_Notes/Genome_Assembly/genome_assembly.md
  * @Description: 
  * 
 -->
 
 # Genome assembly  
-**组装方法：** 使用 `hifiasm` 进行 HiFi 与 Hi-C 联合分型组装 (Haplotype-resolved)，适合高杂合的二倍体马铃薯。
-**Learn From:** Lin Cheng https://github.com/Chenglin20170390/Haplotype-diversity and Zhigui Bao https://github.com/baozg/Potato_C88
-**基于参考基因组挂载：** `Hi-C 数据`只用于分型，若不分型可直接运行 `hifisam` 组装，和 `ragtag` 基于近缘物种参考基因组挂载到 scaffold。
+**组装方法：** 使用 `hifiasm` 进行 HiFi 与 Hi-C 联合分型组装 (Haplotype-resolved)，适合高杂合的二倍体马铃薯。  
+**Learn From:** Lin Cheng https://github.com/Chenglin20170390/Haplotype-diversity and Zhigui Bao https://github.com/baozg/Potato_C88  
+**基于参考基因组挂载：** `Hi-C 数据`只用于分型，若不分型可直接运行 `hifisam` 组装，和 `ragtag` 基于近缘物种参考基因组挂载到 scaffold。  
+
 ## 原始数据质控  
    - `PacBio HiFi` .bam file -> .fq file  
    - `HiC` .fq file  
