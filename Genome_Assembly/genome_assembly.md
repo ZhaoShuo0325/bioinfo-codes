@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-09-23 09:24:06
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-09-28 09:55:42
+ * @LastEditTime: 2026-09-28 10:03:53
  * @FilePath: /Code_Notes/Genome_Assembly/genome_assembly.md
  * @Description: 
  * 
@@ -102,7 +102,7 @@ python2 $JUICER/juicebox_scripts/juicebox_scripts/agp2assembly.py ${sample}/ragt
 ```
 ```bash
 # 将 assembly1 assembly2 合并排序
-python 04_assembly_merge_sort.py ${sample}/ragtag_H1/${sample}.H1.assembly ${sample}/ragtag_H2/${sample}.H2.assembly ${sample}/${sample}.assembly.Hapall.assembly
+python assembly_merge_sort.py ${sample}/ragtag_H1/${sample}.H1.assembly ${sample}/ragtag_H2/${sample}.H2.assembly ${sample}/${sample}.assembly.Hapall.assembly
 ```
 
 ## 3d-dna 基于 Hi-C 的染色体挂载
