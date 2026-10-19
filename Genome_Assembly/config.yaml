@@ -1,0 +1,28 @@
+# 样本基本信息与输出路径
+name: "DM"
+outdir: "/public/home/zhaoshuo/work4/04_annotation/01_EDTA"
+
+rawdata:
+    RNA:
+        - "potato_stolon"
+    ISO: []
+
+# EDTA 运行核心参数
+parameters:
+    EDTA:
+        ## 运行阶段选择: [all, filter, final, anno]
+        step: "all"
+        ## 物种类型选择: [rice, maize, others]
+        species: "others"
+        ## 敏感度设置: 1 (标准) 或 0 (快速)
+        sensitive: 1
+        ## 自定义重复序列库或 CDS 序列（如果不需要则留空 ""）
+        lib: ""
+        cds: ""
+
+biosoft:
+    env:
+        module: ""
+        asm: ""
+    repeat:
+        EDTA: "source /public/home/zhaoshuo/miniconda3/bin/activate ann_env"
