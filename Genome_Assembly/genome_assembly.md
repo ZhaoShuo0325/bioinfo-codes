@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-09-23 09:24:06
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-09-28 10:03:53
+ * @LastEditTime: 2026-10-19 09:37:06
  * @FilePath: /Code_Notes/Genome_Assembly/genome_assembly.md
  * @Description: 
  * 
@@ -57,6 +57,8 @@ awk '/^S/{print ">"\$2;print \$3}' ${sample}.assembly.hic.hap1.p_ctg.gfa > ${sam
 awk '/^S/{print ">"\$2;print \$3}' ${sample}.assembly.hic.hap2.p_ctg.gfa > ${sample}.assembly.hifiasm.H2.fa
 # 将两条单倍型合并为一个文件
 cat ${sample}.assembly.hifiasm.H1.fa ${sample}.assembly.hifiasm.H2.fa > ${sample}.assembly.Hapall.fa
+# 使用 seqkit 对 fa  文件进行分行（不分行会影响 review 运行）
+seqkit seq -w 80 ${sample}.assembly.Hapall.fa > ${sample}_Hapall.fa
 ```
 **2. Juicer Hi-C数据比对与互作信息**
 准备  
@@ -102,10 +104,12 @@ python2 $JUICER/juicebox_scripts/juicebox_scripts/agp2assembly.py ${sample}/ragt
 ```
 ```bash
 # 将 assembly1 assembly2 合并排序
+# 将两套单倍型的两条染色体放在一起，便于 hic 热图调整
 python assembly_merge_sort.py ${sample}/ragtag_H1/${sample}.H1.assembly ${sample}/ragtag_H2/${sample}.H2.assembly ${sample}/${sample}.assembly.Hapall.assembly
 ```
 
 ## 3d-dna 基于 Hi-C 的染色体挂载
+**1. 生成 hic 接触热图**  
 ```bash
 # 使用 3d-dna 软件中脚本实现可视化 hic 接触图
 # input1: 合并排序后 assembly 文件； input2: juicer 生成的互作文件； output: hic 接触热图，后续在 Juicebox 手工调整
@@ -113,6 +117,17 @@ $threeDDNA/visualize/run-assembly-visualizer.sh -q 0 ${sample}/${sample}.assembl
 ```
    - juicebox 需要 .hic 文件和 ${sample}.assembly.Hapall.assembly 文件  
    - 具体操作方法见 https://www.youtube.com/watch?v=Nj7RhQZHM18&t=378s
+
+**2. `juicerbox` 调整后生成 .review.assembly 文件，使用 `3d-dna` 重新调整单倍型**  
+```bash
+# 使用 3d-dna 软件中 run-asm-pipeline-post-review.sh 脚本，调整单倍型组装
+# input1: review.assembly 文件； input2: hifiasm 组装的 fa 文件； input3: juicer 生成的互作文件
+$threeDDNA/run-asm-pipeline-post-review.sh -q 0 -r ${sample}.assembly.Hapall.review.assembly ${sample}.assembly.Hapall.fa ${sample}_merged_nodups.txt
+```
+**3. 根据 `3d-dna` 生成的 Hapall.FINAL.fasta，重新拆分成两条单倍型，去除非必要的 contig**
+```bash
+python split_fasta.py -i ${sample}_Hapall.FINAL.fasta -o1 ${sample}.H1.fa -o2 ${sample}.H2.fa
+```
 
 ## Assembly Assessment
 **1. Contig N50, Gap, Genome Size, etc.**
@@ -124,12 +139,19 @@ assembly-stats  ${sample}.assembly.Hapall.fa > ${sample}.stats
 ```bash
 # busco
 # embryophyta_odb10 数据库
-busco -m genome -i ${sample}.assembly.Hapall.fa -o busco_${sample}  --offline -l embryophyta_odb10 -c 10
+busco -m genome -i ${sample}.H1.fa -o busco_${sample}  --offline -l embryophyta_odb10 -c 10
 ```
 **3. QV**
 ```bash
 # meryl 建库
 meryl count k=21 threads=32 ${sample}_hifi.fq.gz output meryl_${sample}.meryl
 # mergury 计算 QV
-merqury.sh meryl_${sample}.meryl ${sample}.assembly.Hapall.fa merqury_${sample}
+merqury.sh meryl_${sample}.meryl ${sample}.H1.fa merqury_${sample}
+```
+**4. Mapping rate**
+```bash
+# minimap2 将 hifi reads 比对到基因组上
+minimap2 -ax map-hifi -t 32 ${sample}.H1.fa ${sample}_hifi.fq.gz | samtools view -b -@ 32 - | samtools sort -@ 32 -o ${sample}_hap1.sorted.bam
+# samtools flagstat 统计比对率
+samtools flagstat -@ 32 ${sample}_hap1.sorted.bam > ${sample}_hap1.mapping_stats.txt
 ```
