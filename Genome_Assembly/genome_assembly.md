@@ -2,7 +2,7 @@
  * @Author: Shuo Zhao && 18904530325@163.com
  * @Date: 2026-09-23 09:24:06
  * @LastEditors: Shuo Zhao && 18904530325@163.com
- * @LastEditTime: 2026-10-19 09:37:06
+ * @LastEditTime: 2026-10-19 09:44:48
  * @FilePath: /Code_Notes/Genome_Assembly/genome_assembly.md
  * @Description: 
  * 
@@ -45,6 +45,7 @@ seqkit stats -a -T ${sample}_r2.clean.fq.gz | tail -n +2 >> ${sample}_QC_report.
 
 ## 使用 hifiasm 进行组装  
 **hifiasm:** 能够将 HiFi Reads 拼接成较长的 Contigs，并自带纠错和去冗余功能。在输入 Hi-C 数据时，可以直接在图构建阶段区分两条单倍型。https://github.com/chhylp123/hifiasm   
+
 **1. 运行 hifiasm 分型组装**  
 ```bash
 # hifiasm
@@ -60,7 +61,7 @@ cat ${sample}.assembly.hifiasm.H1.fa ${sample}.assembly.hifiasm.H2.fa > ${sample
 # 使用 seqkit 对 fa  文件进行分行（不分行会影响 review 运行）
 seqkit seq -w 80 ${sample}.assembly.Hapall.fa > ${sample}_Hapall.fa
 ```
-**2. Juicer Hi-C数据比对与互作信息**
+**2. Juicer Hi-C数据比对与互作信息**  
 准备  
 ```bash
 # Juicer 要求工作目录下要有 fastq 文件，和参考基因组
@@ -90,6 +91,7 @@ sh $JUICER/CPU/juicer.sh \
     -y ${sample}_MboI.txt
 ```
 互作结果文件存放在 aligned 文件夹下 merged_nodups.txt，记录 Hi-C 与基因组的比对信息。  
+
 **3. Ragtag 参考基因组辅助的染色体挂载**  
 ```bash
 # 利用 Ragtag 将组装的两套单倍型分别挂载到参考基因组（DM8）上
